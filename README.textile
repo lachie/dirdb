@@ -4,7 +4,7 @@ Its like using a directory as a database. Rated PoC (you choose the meaning) & a
 
 h2. backstory
 
-I keep running into this same pattern of wanting to keep my app's data in a set of files in a directory, 
+I keep running into the same pattern of wanting to keep my app's data in a set of files in a directory, 
 rather than in a database.
 Its always liberating for a while, but inevitably reaches a point where its more unwieldy than using a 
 plain ol' database.
@@ -100,7 +100,7 @@ end
 
 The thing to realise is that whatever @scan_file@ returns, @initialize@ gets and must handle.
 
-OK, so it doesn't really do much, but it does enough and will do more.
+OK, so it doesn't really do much, but it does enough and will do more. Maybe I should give it up and just use Sphinx?
 
 h3. indexes
 
