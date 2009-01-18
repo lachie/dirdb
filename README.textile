@@ -1,0 +1,152 @@
+h1. Dirty DirDB
+
+Its like using a directory as a database. Rated PoC (you choose the meaning) & alpha.
+
+h2. backstory
+
+I keep running into this same pattern of wanting to keep my app's data in a set of files in a directory, 
+rather than in a database.
+Its always liberating for a while, but inevitably reaches a point where its more unwieldy than using a 
+plain ol' database.
+
+The main benefit seems to be that the data's data and there's no reason it shouldn't be kept in a file 
+instead of a database anyway.
+The unwieldiness and performance angst seems to come not from the meat, but from the metadata: when you don't need the whole thing
+but a small detail or excerpt.
+
+In other words, my solution ends up getting more and more convoluted the further away from the meat of the data I get.
+
+For example, I was writing an app which was used to review Capistrano runs and parse their log files. Why store that stuff in a database? By the time I started considering a rewrite I needed to:
+
+* paginate a list of lot of log files.
+* pull out just an excerpt of the log file (say, a comment describing the reason for running the script).
+* determine the success of the run.
+* determine the time of the run
+* etc.
+
+It was boring to code & slow.
+
+This library is an experiment in easing that kind of disparity & angst.
+
+h2. example
+
+The most recent path-crossing I had with the pattern was when I started dreaming of simplifying my blog, a la
+http://github.com/toolmantim/toolmantim.
+
+The simplicity of "just having files" is great, but I know I don't really want to go there in case I regret it, as I have in the past. Instead of giving up, this time I looked deep into my soul to work out what was eating me.
+
+I think this library will probably get me out of the existential bind; an article might look like this:
+
+<pre><code>
+require 'rubygems'
+require 'dirdb'
+require 'pp'
+
+class Article
+  # dirdb setting-uppness
+  include DirDB::Resource
+
+  index_class DirDB::Index::Basic    # optional, default shown
+  glob '*.haml'                      # optional, default '*'
+
+  # optional indexes:
+  index :by_created_at do |article|
+    File.ctime(article.path)
+  end
+  index :by_reverse_title_length do |article|
+    -article.title.length
+  end
+
+
+  # mandatory scanner; this is where you grab all the file's information
+  def self.scan_file(path)
+    File.basename(path,'haml').sub(/^\d+_/,'').gsub('_',' ')
+  end
+
+
+
+  # normal modelness
+  attr_reader :title
+
+  def initialize(title)
+    @title = title || ''
+  end
+end
+
+if __FILE__ == $0
+  Article.path = '/path/to/your/blog'
+  
+  @articles = Article.all(:by_created_at)
+  
+  @how_to_use_files = Article.get('how_to_use_files.haml')
+end
+</code></pre>
+
+@scan_file@ is really the core of it; you could make it much more complex if the fancy took you:
+
+<pre><code>
+def self.scan_file(path)
+  title = nil
+  IO.foreach(path) do |line|
+    if line[/^\s*-#\s*title:\s*(.*)$/]
+      title = $1
+      break
+    end
+  end
+
+  title || ''
+end
+</code></pre>
+
+The thing to realise is that whatever @scan_file@ returns, @initialize@ gets and must handle.
+
+OK, so it doesn't really do much, but it does enough and will do more.
+
+h3. indexes
+
+Indexes are only used for sorting at this stage. The block passed to the class method @index@ has the
+selfsame semantics as @Enumerable#sort_by@.
+
+There are two indexes at the moment: @Basic@ and @YAML@.
+
+* *Basic* scans & builds indexes into memory, once on first use.
+* *YAML* Is a file-cached version of the Basic index. On first use, it tries to read from YAML, then if necessary scans, builds indexes and writes out the YAML cache.
+
+h2. caveats
+
+* Read-only. Read-write is strongly YAGNI for me, but naively you could get around it by rebuilding the index on write.
+* No specs or nuffin yet. Its just a PoC. The included features don't really match up with the implementation anymore.
+
+h2. TODO
+
+* Sqlite index storage.
+* Using git metadata for created and updated at times. This is more of a model implementation thing, but I'd like to include it in the toolkit by default.
+* Efficient will_paginate integration.
+* rake tasks for offline rebuilding of indexes (YAGNI for now).
+* Delta indexing (YAGNI for now).
+
+
+h2. LICENSE:
+
+(The MIT License)
+
+Copyright (c) 2009 Lachie Cox
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -1,0 +1,22 @@
+--- 
+:indexes: 
+  :_default: 
+  - 1_how_to_do_stuff.haml
+  - 2_how_to_relax.haml
+  - 3_and_why_too.haml
+  - 4_how.haml
+  :by_ctime: 
+  - 1_how_to_do_stuff.haml
+  - 3_and_why_too.haml
+  - 4_how.haml
+  - 2_how_to_relax.haml
+  :by_reverse_length: 
+  - 1_how_to_do_stuff.haml
+  - 2_how_to_relax.haml
+  - 3_and_why_too.haml
+  - 4_how.haml
+:resource_arguments: 
+  3_and_why_too.haml: and why too.
+  4_how.haml: how.
+  1_how_to_do_stuff.haml: how to do stuff.
+  2_how_to_relax.haml: how to relax.
