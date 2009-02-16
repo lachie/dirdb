@@ -22,7 +22,7 @@ module DirDB
         @resource_arguments = state[:resource_arguments]
         
         @resource_arguments.each do |(basename,args)|
-          instantiate_resource!(basename,resource_arguments)
+          instantiate_resource!(basename,args)
         end
       end
       

@@ -16,6 +16,10 @@ module DirDB
       self.class.index
     end
     
+    def read
+      File.read(path)
+    end
+    
     module ClassMethods
       def path=(path)
         @path = path
@@ -54,6 +58,11 @@ module DirDB
         @indexes[name] = block
       end
       
+      def lookup(name,&block)
+        @lookups ||= {}
+        @lookups[name] = block
+      end
+      
       def build_indexes(resources)
         built_index = {}
         
@@ -62,6 +71,20 @@ module DirDB
         end
         
         built_index
+      end
+      
+      def build_lookups(resources)
+        built_lookups = {}
+        
+        (@lookups || {}).each do |(name,block)|
+          built_lookups[name] = lookup = Hash.new {|h,k| h[k] = []}
+          
+          resources.each do |(_,res)|
+            lookup[block[res]] << res
+          end
+        end
+        
+        built_lookups
       end
       
       def resource_index
@@ -77,12 +100,22 @@ module DirDB
         end
       end
       
+
+      
       def all(index_name=nil)
         resource_index.all(index_name)
       end
       
       def get(basename)
-        resource_index.get(basename)
+        resource_index.find(:_default, basename)
+      end
+      
+      def find(lookup_name,key)
+        resource_index.find(lookup_name,key)
+      end
+      
+      def first(lookup_name,key)
+        resource_index.find(lookup_name,key).first
       end
     end
   end

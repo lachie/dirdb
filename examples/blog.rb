@@ -1,16 +1,18 @@
 require File.dirname(__FILE__)+'/../lib/dirdb'
+require 'ostruct'
 
-class Article
+class Article < OpenStruct
   include DirDB::Resource
   
   # index_class DirDB::Index::YAML
-  # glob '*.haml'
+  glob '*.haml'
   
   index :by_ctime do |article|
     File.ctime(article.path)
   end
-  index :by_reverse_length do |article|
-    -article.title.length
+  
+  lookup :by_slug do |article|
+    article.slug
   end
   
   attr_reader :title
@@ -24,18 +26,21 @@ class Article
     #       end
     #     end
     
-    # title
-    File.basename(path,'haml').sub(/^\d+_/,'').gsub('_',' ')
+    info = {
+      :title => File.basename(path,'haml').sub(/^\d+_/,'').gsub('_',' '),
+      :slug  => File.basename(path,'haml').sub(/\.$/,'')
+    }
+    pp info
+    [ info ]
   end
-  
-  def initialize(title)
-    @title = title || ''
-  end
+
 end
 
 if __FILE__ == $0
   require 'pp'
   Article.path = File.dirname(__FILE__) + '/blog'
   
-  pp Article.all(:by_ctime)
+  p = Article.all(:by_ctime).first
+  puts p.path
+  puts p.read.class
 end

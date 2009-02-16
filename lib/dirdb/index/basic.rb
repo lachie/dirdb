@@ -11,6 +11,11 @@ module DirDB
         @indexes
       end
       
+      def lookups
+        prepare! unless @lookups
+        @lookups
+      end
+      
       # access resources
       def resources
         prepare! unless @resources
@@ -19,13 +24,17 @@ module DirDB
       
       # prepare the lazy variables indexes & resources.
       def prepare!
+        @lookups = {}
         scan_resources!
         build_index!
+        build_lookups!
+        
+        pp @lookups
       end
       
       # scan all the resources resource_class knows about
       def scan_resources!
-        @resources = {}
+        @resources = @lookups[:_default] = {}
         @resource_arguments = {}
         
         @default_order = []
@@ -33,7 +42,7 @@ module DirDB
           @default_order << basename = File.basename(path)
           
           @resource_arguments[basename] = resource_arguments = @resource_class.scan_file(path)
-          
+
           instantiate_resource!(basename,resource_arguments)
         end
       end
@@ -46,15 +55,23 @@ module DirDB
       
       # build resources using the resource_class
       def build_index!
+        puts "build_index!"
         @indexes = {}
         
         @indexes = @resource_class.build_indexes(@resources)
         @indexes[:_default] ||= @default_order
       end
-  
-      # get a resource
-      def get(basename)
-        resources[basename]
+
+      def build_lookups!
+        @lookups = @resource_class.build_lookups(@resources)
+      end
+      
+      def find(name,key)
+        pp name
+        pp key
+        pp @lookups
+        
+        lookups[name][key]
       end
   
       # get all resources sorted using +index+
@@ -62,6 +79,7 @@ module DirDB
         index_name ||= :_default
         selected_index = indexes[index_name] || raise(ArgumentError,"Index '#{index_name}' doesn't exist.")
         
+        puts "selected_index: #{index_name}"
         pp selected_index
         
         resources.values_at(*selected_index)
